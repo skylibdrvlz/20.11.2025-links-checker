@@ -1,25 +1,20 @@
 package main
 
 import (
-	"fmt"
-	"log"
+	"github.com/skylibdrvlz/20.11.2025-links-checker/handlers"
+	"log/slog"
 	"net/http"
+	"os"
 )
 
 func main() {
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+
+	handler := handlers.NewHandler()
+
 	mux := http.NewServeMux()
+	mux.HandleFunc("/check-links", handler.CheckLinks)
 
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, `{"status": "ok"}`)
-	})
-
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Server is running!")
-	})
-
-	fmt.Println("Starting server on :8080")
-
-	if err := http.ListenAndServe(":8080", mux); err != nil {
-		log.Fatalf("Server failed to start: %v", err)
-	}
+	slog.Info("Server starting", "port", "8080")
+	http.ListenAndServe(":8080", mux)
 }
