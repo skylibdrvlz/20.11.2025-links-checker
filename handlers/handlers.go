@@ -4,19 +4,20 @@ import (
 	"encoding/json"
 	"github.com/skylibdrvlz/20.11.2025-links-checker/checker"
 	"github.com/skylibdrvlz/20.11.2025-links-checker/models"
+	"github.com/skylibdrvlz/20.11.2025-links-checker/storage"
 	"log/slog"
 	"net/http"
 )
 
 type Handler struct {
+	storage *storage.Storage
 	checker *checker.Checker
-	nextID  int
 }
 
-func NewHandler() *Handler {
+func NewHandler(storage *storage.Storage) *Handler {
 	return &Handler{
+		storage: storage,
 		checker: checker.NewChecker(),
-		nextID:  1,
 	}
 }
 
@@ -33,9 +34,7 @@ func (h *Handler) CheckLinks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	results := h.checker.CheckLinks(r.Context(), req.Links)
-
-	linksNum := h.nextID
-	h.nextID++
+	linksNum := h.storage.SaveLinkSet(results)
 
 	resp := models.CheckLinksResponse{
 		Links:    results,

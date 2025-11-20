@@ -8,3 +8,8 @@ type CheckLinksResponse struct {
 	Links    map[string]string `json:"links"`
 	LinksNum int               `json:"links_num"`
 }
+
+type LinkSet struct {
+	ID    int
+	Links map[string]string
+}
