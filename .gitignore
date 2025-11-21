@@ -24,3 +24,5 @@ go.work
 Thumbs.db
 
 data.json
+
+*.pdf

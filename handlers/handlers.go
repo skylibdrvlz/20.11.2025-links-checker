@@ -56,9 +56,12 @@ func (h *Handler) GenerateReport(w http.ResponseWriter, r *http.Request) {
 
 	var req models.LinksListRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		slog.Error("Invalid JSON in generate report request", "error", err)
 		http.Error(w, "Invalid JSON", 400)
 		return
 	}
+
+	slog.Info("Generating PDF report", "requested_ids", req.LinksList)
 
 	linkSets, err := h.storage.GetLinkSets(req.LinksList)
 	if err != nil {
@@ -72,9 +75,14 @@ func (h *Handler) GenerateReport(w http.ResponseWriter, r *http.Request) {
 
 	pdfData, err := pdf.GeneratePDF(linkSets)
 	if err != nil {
+		slog.Error("PDF generation failed", "error", err, "link_sets_count", len(linkSets))
 		http.Error(w, "Error generating PDF", 500)
 		return
 	}
+
+	slog.Info("PDF report generated successfully",
+		"link_sets_count", len(linkSets),
+		"pdf_size_bytes", len(pdfData))
 
 	w.Header().Set("Content-Type", "application/pdf")
 	w.Header().Set("Content-Disposition", "attachment; filename=report.pdf")
