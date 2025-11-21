@@ -65,7 +65,11 @@ func (h *Handler) GenerateReport(w http.ResponseWriter, r *http.Request) {
 
 	linkSets, err := h.storage.GetLinkSets(req.LinksList)
 	if err != nil {
-		http.Error(w, err.Error(), 404)
+		slog.Warn("Some IDs not found for PDF generation", "error", err)
+		pdfData := pdf.GenerateErrorPDF(err.Error()) // "IDs not found: [100]"
+		w.Header().Set("Content-Type", "application/pdf")
+		w.Header().Set("Content-Disposition", "attachment; filename=report.pdf")
+		w.Write(pdfData)
 		return
 	}
 	if len(linkSets) == 0 {

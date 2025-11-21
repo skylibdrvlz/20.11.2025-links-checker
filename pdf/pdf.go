@@ -33,3 +33,13 @@ func GeneratePDF(linkSets []*models.LinkSet) ([]byte, error) {
 	}
 	return buf.Bytes(), nil
 }
+
+func GenerateErrorPDF(errorMsg string) []byte {
+	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf.AddPage()
+	pdf.SetFont("Arial", "", 12)
+	pdf.Cell(0, 10, errorMsg) // просто текст ошибки
+	var buf bytes.Buffer
+	pdf.Output(&buf)
+	return buf.Bytes()
+}
