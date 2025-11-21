@@ -18,6 +18,7 @@ func NewChecker() *Checker {
 }
 
 func (c *Checker) CheckLinks(ctx context.Context, links []string) map[string]string {
+
 	var wg sync.WaitGroup
 	results := make(map[string]string)
 	var mu sync.Mutex
@@ -27,12 +28,27 @@ func (c *Checker) CheckLinks(ctx context.Context, links []string) map[string]str
 		go func(l string) {
 			defer wg.Done()
 
-			resp, err := c.client.Get("http://" + l)
-			if err == nil && resp.StatusCode < 400 {
+			req, err := http.NewRequestWithContext(ctx, "GET", "http://"+l, nil)
+			if err != nil {
+				mu.Lock()
+				results[l] = "not available"
+				mu.Unlock()
+				return
+			}
+
+			resp, err := c.client.Do(req)
+			if err != nil {
+				mu.Lock()
+				results[l] = "not available"
+				mu.Unlock()
+				return
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode < 400 {
 				mu.Lock()
 				results[l] = "available"
 				mu.Unlock()
-				resp.Body.Close()
 			} else {
 				mu.Lock()
 				results[l] = "not available"

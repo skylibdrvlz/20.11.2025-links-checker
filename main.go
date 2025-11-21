@@ -28,25 +28,26 @@ func main() {
 	}
 
 	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(quit, syscall.SIGTERM, os.Interrupt)
 
 	go func() {
-		<-quit
-		slog.Info("Graceful shutdown activated")
-
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-
-		if err := server.Shutdown(ctx); err != nil {
-			slog.Error("Graceful shutdown failed", "error", err)
+		slog.Info("server started", "addr", server.Addr)
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			slog.Error("server failed", "error", err)
+			os.Exit(1)
 		}
 	}()
 
-	slog.Info("Server starting", "port", "8080")
+	<-quit
+	slog.Info("graceful shutdown initiated")
 
-	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		slog.Error("Server failed", "error", err)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		slog.Error("shutdown error", "err", err)
+	} else {
+		slog.Info("server gracefully stopped")
 	}
 
-	slog.Info("Server stopped")
 }
