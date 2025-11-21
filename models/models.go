@@ -13,3 +13,7 @@ type LinkSet struct {
 	ID    int
 	Links map[string]string
 }
+
+type LinksListRequest struct {
+	LinksList []int `json:"links_list"`
+}

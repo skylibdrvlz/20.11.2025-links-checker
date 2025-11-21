@@ -2,13 +2,14 @@ package storage
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/skylibdrvlz/20.11.2025-links-checker/models"
 	"os"
 	"sync"
 )
 
 type Storage struct {
-	mu       sync.Mutex
+	mu       sync.RWMutex
 	linkSets map[int]*models.LinkSet
 	nextID   int
 	dataFile string
@@ -40,6 +41,27 @@ func (s *Storage) SaveLinkSet(links map[string]string) int {
 
 	s.saveToFile()
 	return id
+}
+
+func (s *Storage) GetLinkSets(ids []int) ([]*models.LinkSet, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	var result []*models.LinkSet
+	var missingIDs []int
+
+	for _, id := range ids {
+		if linkSet, exists := s.linkSets[id]; exists {
+			result = append(result, linkSet)
+		} else {
+			missingIDs = append(missingIDs, id)
+		}
+	}
+
+	if len(missingIDs) > 0 {
+		return nil, fmt.Errorf("IDs not found: %v", missingIDs)
+	}
+	return result, nil
 }
 
 func (s *Storage) saveToFile() {

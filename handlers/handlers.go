@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/skylibdrvlz/20.11.2025-links-checker/checker"
 	"github.com/skylibdrvlz/20.11.2025-links-checker/models"
+	"github.com/skylibdrvlz/20.11.2025-links-checker/pdf"
 	"github.com/skylibdrvlz/20.11.2025-links-checker/storage"
 	"log/slog"
 	"net/http"
@@ -45,4 +46,37 @@ func (h *Handler) CheckLinks(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resp)
 
 	slog.Info("Links checked", "count", len(req.Links), "id", linksNum)
+}
+
+func (h *Handler) GenerateReport(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Method not allowed", 405)
+		return
+	}
+
+	var req models.LinksListRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid JSON", 400)
+		return
+	}
+
+	linkSets, err := h.storage.GetLinkSets(req.LinksList)
+	if err != nil {
+		http.Error(w, err.Error(), 404)
+		return
+	}
+	if len(linkSets) == 0 {
+		http.Error(w, "No link sets found", 404)
+		return
+	}
+
+	pdfData, err := pdf.GeneratePDF(linkSets)
+	if err != nil {
+		http.Error(w, "Error generating PDF", 500)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", "attachment; filename=report.pdf")
+	w.Write(pdfData)
 }

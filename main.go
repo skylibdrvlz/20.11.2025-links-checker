@@ -16,6 +16,7 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/check-links", handler.CheckLinks)
+	mux.HandleFunc("/generate-report", handler.GenerateReport)
 
 	slog.Info("Server starting", "port", "8080")
 	http.ListenAndServe(":8080", mux)
